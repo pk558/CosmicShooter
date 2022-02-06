@@ -25,14 +25,14 @@ class Bullet(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = pos
         self.prev_time = time.time()
-        self.speed = 0.25
+        self.speed = 2.5
     def update(self):
         now = time.time()
         dt = now - self.prev_time
         self.prev_time = now
         shoot_speed = (self.speed * dt) * 1000
         self.rect.center = (self.rect.center[0], self.rect.center[1] - shoot_speed)
-        #print(f"bullet update {self.rect.center} {shoot_speed}")
+            
 class Player(pygame.sprite.Sprite):
     def __init__(self, width: int, height: int, pos: tuple):
         super(Player, self).__init__()
@@ -42,9 +42,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = pos
         self.prev_time = time.time()
         self.player_speed = 1
-        self.player_ammunition = 15
+        self.player_ammunition_max = 50
+        self.player_ammunition = 50
         self.bullet_group = pygame.sprite.RenderPlain()
-        self.bullets = []
     def update(self):
         keys = pygame.key.get_pressed()
         now = time.time()
@@ -65,16 +65,13 @@ class Player(pygame.sprite.Sprite):
                 self.rect.center = (self.rect.center[0] + playerMove, self.rect.center[1])
         
         if keys[pygame.K_SPACE]:
-                current_time = pygame.time.get_ticks()
-                print(current_time)
-                if current_time % 8 == 0:
-                    if self.player_ammunition > 0:
-                        bullet = Bullet(100, 100, (self.rect.center[0], self.rect.y))
-                        self.bullets.append(bullet)
-                        self.bullet_group.add(bullet)
-                        self.player_ammunition -= 1
+            if self.player_ammunition > 0:
+                bullet = Bullet(100, 100, (self.rect.center[0], self.rect.y))
+                new_game.bullets.append(bullet)
+                self.bullet_group.add(bullet)
+                self.player_ammunition -= 1
         if keys[pygame.K_r]:
-            self.player_ammunition = 15
+            self.player_ammunition = self.player_ammunition_max
         self.bullet_group.draw(new_game.screen)
         self.bullet_group.update()
         
@@ -97,11 +94,15 @@ class Game():
         self.group.add(self.background)
         self.group.add(self.player)
         #font
-        self.font = pygame.font.SysFont("Comic Sans", 25)
+        self.font = pygame.font.SysFont("Comic Sans", 45)
+        #player
+        self.bullets = []
+        
         #run
         self.run = True
     def Run(self):
         while self.run:
+            print(self.bullets)
             keys = pygame.key.get_pressed()
             pygame.time.Clock().tick(144)
             for event in pygame.event.get():
@@ -109,13 +110,14 @@ class Game():
                     self.run = False
             self.group.draw(self.screen)
             self.group.update()
-            for ammo in range(0, self.player.player_ammunition):
-                self.screen.blit(pygame.transform.rotate(pygame.image.load("images/bullets/01.png"), 90), ((ammo*30) + 5, 30))
+            # for ammo in range(0, self.player.player_ammunition):
+            #     self.screen.blit(pygame.transform.rotate(pygame.image.load("images/bullets/01.png"), 90), ((ammo*30) + 5, 30))
 
-            # if self.player.player_ammunition > 0:
-            #     self.screen.blit(self.font.render("ammunition: "+str(self.player.player_ammunition), True, (255,255,255)), (0,0))
-            # elif self.player.player_ammunition == 0:
-            #     self.screen.blit(self.font.render("You have run out of ammo, press R to reload!", True, (255,255,255)), (0,0))
+            if self.player.player_ammunition > 0:
+                self.screen.blit(pygame.transform.rotate(pygame.image.load("images/bullets/01.png"), 90), (10, -40))
+                self.screen.blit(self.font.render(""+str(self.player.player_ammunition), True, (255,255,255)), (100,10))
+            elif self.player.player_ammunition == 0:
+                self.screen.blit(self.font.render("You have run out of ammo, press R to reload!", True, (255,255,255)), (0,0))
             pygame.display.update()
 new_game = Game(WIDTH, HEIGHT)
 new_game.Run()
