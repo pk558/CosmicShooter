@@ -1,9 +1,10 @@
 from sre_parse import HEXDIGITS
 import pygame
 import time
+import random
 import threading 
-WIDTH = 1300
-HEIGHT = 700
+WIDTH = 800
+HEIGHT = 600
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, width: int, height: int, pos: tuple):
@@ -16,6 +17,23 @@ class Background(pygame.sprite.Sprite):
     def update(self):
         pass
 
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, pos: tuple, width: int, height: int, level: str):
+        super(Enemy, self).__init__()
+        self.image = pygame.image.load("images/enemies/chicken_1.png").convert_alpha()
+        self.image = pygame.transform.smoothscale(self.image, (width, height))
+        self.rect = self.image.get_rect()
+        self.rect.center = (pos[0] + random.randrange(0, WIDTH - self.image.get_width()), pos[1])
+        self.prev_time = time.time()
+        self.speed = random.SystemRandom().uniform(.25, .5)
+        self.hp = 100
+    def update(self):
+        now = time.time()
+        dt = now - self.prev_time
+        self.prev_time = now
+        self.moving_speed = (self.speed * dt) * 1000
+        self.rect.center = (self.rect.center[0], self.rect.center[1] + self.moving_speed)
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, width: int, height: int, pos: tuple):
         super(Bullet, self).__init__()
@@ -32,7 +50,6 @@ class Bullet(pygame.sprite.Sprite):
         self.prev_time = now
         shoot_speed = (self.speed * dt) * 1000
         self.rect.center = (self.rect.center[0], self.rect.center[1] - shoot_speed)
-            
 class Player(pygame.sprite.Sprite):
     def __init__(self, width: int, height: int, pos: tuple):
         super(Player, self).__init__()
@@ -91,18 +108,20 @@ class Game():
         #sprites
         self.group = pygame.sprite.RenderPlain()
         self.ammo_group = pygame.sprite.RenderPlain()
+        self.level_group = pygame.sprite.RenderPlain()
         self.group.add(self.background)
         self.group.add(self.player)
         #font
         self.font = pygame.font.SysFont("Comic Sans", 45)
         #player
         self.bullets = []
-        
+        self.enemies = []
         #run
         self.run = True
     def Run(self):
+        Level(5).update()
         while self.run:
-            print(self.bullets)
+            #print(self.bullets)
             keys = pygame.key.get_pressed()
             pygame.time.Clock().tick(144)
             for event in pygame.event.get():
@@ -110,14 +129,32 @@ class Game():
                     self.run = False
             self.group.draw(self.screen)
             self.group.update()
-            # for ammo in range(0, self.player.player_ammunition):
-            #     self.screen.blit(pygame.transform.rotate(pygame.image.load("images/bullets/01.png"), 90), ((ammo*30) + 5, 30))
+            #print(self.level_group)
+            self.level_group.draw(self.screen)
+            self.level_group.update()
+            
 
+            if keys[pygame.K_q]:
+                Level(random.randrange(1, 15)).update()
             if self.player.player_ammunition > 0:
                 self.screen.blit(pygame.transform.rotate(pygame.image.load("images/bullets/01.png"), 90), (10, -40))
                 self.screen.blit(self.font.render(""+str(self.player.player_ammunition), True, (255,255,255)), (100,10))
             elif self.player.player_ammunition == 0:
                 self.screen.blit(self.font.render("You have run out of ammo, press R to reload!", True, (255,255,255)), (0,0))
             pygame.display.update()
+    def checkCollision(self, sprite1, sprite2):
+        col = pygame.sprite.collide_rect(sprite1, sprite2)
+        if col == True:
+            print("trafiono")
+class Level():
+    def __init__(self, level):
+        self.level = level
+    def update(self):
+        for i in range(0, self.level):
+            enemy = Enemy((0,0), int(WIDTH*.05), int(HEIGHT*.05), str(self.level))
+            new_game.enemies.append(enemy)
+            new_game.level_group.add(enemy)
+
+
 new_game = Game(WIDTH, HEIGHT)
 new_game.Run()
